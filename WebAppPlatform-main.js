@@ -209,7 +209,7 @@ export const Registry = (() => {
 
       const responsibility = ResponsibilityRegistry[ResponsibilityName];
 
-      console.log(`Responsibility called: ${ResponsibilityName} by ${AppName}`);
+      console.log(`Responsibility called: ${ResponsibilityName} by ${AppName} with type ${CallBody.type}`);
 
       // Run authority handler as a promise
       const authorityPromise = (async () => {
@@ -268,9 +268,10 @@ fetch("autostart.json")
   .then((response) => response.json())
   .then((autostartApps) => {
     autostartApps.forEach((App) => {
+    const AppName = App.name;
       import(App.src)
         .then((AppModule) => {
-          const AppName = App.name;
+          
           const AppBody = AppModule.default;
           const result = Registry.app_start(AppName, AppBody);
 

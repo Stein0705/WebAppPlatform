@@ -798,7 +798,7 @@ class SlideShowHandler {
       <div class="header">
         <span class="header-title">🎞 SlideShow</span>
         <span class="project-badge" id="project-badge">No project loaded</span>
-        <button class="icon-btn" id="btn-fullscreen" title="Fullscreen">⛶</button>
+        <button class="icon-btn" id="btn-reload" title="Reload from database">↺</button>
       </div>
       <div class="presentation">
         <div class="left-panel">
@@ -951,27 +951,10 @@ class SlideShowHandler {
   // ── Buttons ────────────────────────────────────────────────────────────────
 
   _bindButtons() {
-    // Fullscreen
-    this.el.querySelector("#btn-fullscreen").onclick = () => {
-      const root = this.shadow;
-      const modalId = APP_ID + "-fullscreen";
-      if (root.id === modalId) {
-        root.id = root.dataset.origId || "";
-        root.style.cssText = root.dataset.origStyle || "";
-        delete root.dataset.origId;
-        delete root.dataset.origStyle;
-      } else {
-        root.dataset.origId = root.id;
-        root.dataset.origStyle = root.style.cssText;
-        root.id = modalId;
-        Object.assign(root.style, {
-          position: "fixed",
-          inset: "1vw",
-          zIndex: "9999",
-          boxShadow: "0 8px 48px rgba(0,0,0,0.9)",
-          background: "var(--color-bg, #0c0e13)",
-        });
-      }
+    // Reload
+    this.el.querySelector("#btn-reload").onclick = async () => {
+      if (!this.activeProjectHash) return;
+      await this.loadProject(this.activeProjectHash, this.activeProjectName);
     };
 
     // Add slide

@@ -119,11 +119,18 @@ async function FracRequestHandler(callerApp, callBody) {
       // 2. Update dataRefs index for this user
       if (!callBody.meta?.skipDataRefs) {
         if (pathParts.length === 1) {
-          // Level-1 ref: replace the dataRefs node with exactly the new keys
+          let existingRefs = {};
+          if (callBody.meta?.dontDelete) {
+            try {
+              existingRefs = (await dbGet(`users/${uid}/dataRefs/${pathParts[0]}`)) ?? {};
+            } catch {
+              existingRefs = {};
+            }
+          }
           const newRefs = Object.fromEntries(
             Object.keys(body).map((k) => [k, true])
           );
-          await dbSet(`users/${uid}/dataRefs/${pathParts[0]}`, newRefs);
+          await dbSet(`users/${uid}/dataRefs/${pathParts[0]}`, { ...existingRefs, ...newRefs });
         } else {
           // Level-2+ ref: just mark the level-2 path as accessible
           const level2Path = `${pathParts[0]}/${pathParts[1]}`;

@@ -312,13 +312,12 @@ async function fracGet(ref) {
   return res.body ?? {};
 }
 
-async function fracSet(ref, body) {
+async function fracSet(ref, body, meta = {}) {
   console.log("Setting: ", ref);
-  let meta = {};
-  if (ref == "slides"){
-    // send extra info to not save the dataRefs here
-    meta = { skipDataRefs: true };
-  }
+  let meta = meta;
+  
+
+
   const res = await Registry.responsibility_call("dbuserfractioning", APP_ID, {
     type: "frac_set",
     ref,
@@ -487,7 +486,7 @@ async function saveSlides(flatSlides, projectHash) {
   console.log("[saveSlides] contentSlides:", contentSlides);
   console.log("[saveSlides] slidesBody:", slidesBody);
   if (Object.keys(slidesBody).length > 0) {
-    await fracSet("slides", slidesBody);
+    await fracSet("slides", slidesBody, { skipDataRefs: true });
   }
 
   // 4. Rebuild references.slides on the project node(s)
@@ -544,7 +543,7 @@ async function patchProjectSlideRefs(flatSlides, projectHash) {
   // Write back only the root hash key in the projects partition
   const rootHash = projectHash.split("/")[0];
   const projectBody = { [rootHash]: allProjects[rootHash] };
-  await fracSet("projects", projectBody);
+  await fracSet("projects", projectBody, {"dontDelete": true});
 }
 
 function clearSlideRefs(node) {

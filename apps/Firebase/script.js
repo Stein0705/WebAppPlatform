@@ -4,16 +4,16 @@
 //
 // ── Supported call types ──────────────────────────────────────────────────────
 //
-//   db_get          { path }                          → { data: value | null }
-//   db_set          { path, value }                   → {}
-//   db_delete       { path }                          → {}
-//   db_list         { path }                          → { data: [...keys] }
-//   db_get_all      { path }                          → { data: subtree | null }
-//   db_query        { path, filter }                  → { data: [...values] }
-//   db_subscribe    { subscriberId, path, callback }  → {}  (live listener on path)
-//   db_unsubscribe  { subscriberId }                  → {}
-//   db_flush                                          → {}  (no-op — writes are real-time)
-//   db_stats                                          → diagnostics
+//   get          { path }                          → { data: value | null }
+//   set          { path, value }                   → {}
+//   delete       { path }                          → {}
+//   list         { path }                          → { data: [...keys] }
+//   get_all      { path }                          → { data: subtree | null }
+//   query        { path, filter }                  → { data: [...values] }
+//   subscribe    { subscriberId, path, callback }  → {}  (live listener on path)
+//   unsubscribe  { subscriberId }                  → {}
+//   flush                                          → {}  (no-op — writes are real-time)
+//   stats                                          → diagnostics
 //
 // Paths use "/" notation, e.g. "users/alice" or just "settings".
 //
@@ -110,7 +110,7 @@ function attachListener(path, callback) {
 async function DbRequestHandler(callerApp, CallBody) {
   let { type, path } = CallBody;
 
-  const noPathNeeded = ["db_flush", "db_stats", "db_unsubscribe"];
+  const noPathNeeded = ["flush", "stats", "unsubscribe"];
   if (!path && !noPathNeeded.includes(type)) {
     return { type: "error", status: "Missing 'path' field." };
   }
@@ -118,7 +118,7 @@ async function DbRequestHandler(callerApp, CallBody) {
   path = "WebAppPlatform/" + path;
 
   switch (type) {
-    case "db_get": {
+    case "get": {
       const snap = await get(ref(db, path));
       return {
         type: "success",
@@ -127,7 +127,7 @@ async function DbRequestHandler(callerApp, CallBody) {
       };
     }
 
-    case "db_set": {
+    case "set": {
       const { value } = CallBody;
       if (value === undefined)
         return { type: "error", status: "Missing 'value'." };
@@ -135,12 +135,12 @@ async function DbRequestHandler(callerApp, CallBody) {
       return { type: "success", status: "" };
     }
 
-    case "db_delete": {
+    case "delete": {
       await remove(ref(db, path));
       return { type: "success", status: "" };
     }
 
-    case "db_list": {
+    case "list": {
       const snap = await get(ref(db, path));
       if (!snap.exists()) return { type: "success", status: "", data: [] };
       const val = snap.val();
@@ -151,7 +151,7 @@ async function DbRequestHandler(callerApp, CallBody) {
       };
     }
 
-    case "db_get_all": {
+    case "get_all": {
       const snap = await get(ref(db, path));
       return {
         type: "success",
@@ -160,7 +160,7 @@ async function DbRequestHandler(callerApp, CallBody) {
       };
     }
 
-    case "db_query": {
+    case "query": {
       const { filter } = CallBody;
       const snap = await get(ref(db, path));
       if (!snap.exists()) return { type: "success", status: "", data: [] };
@@ -175,7 +175,7 @@ async function DbRequestHandler(callerApp, CallBody) {
       return { type: "success", status: "", data: results };
     }
 
-    case "db_subscribe": {
+    case "subscribe": {
       const { subscriberId, callback } = CallBody;
       if (!subscriberId)
         return { type: "error", status: "Missing 'subscriberId'." };
@@ -193,7 +193,7 @@ async function DbRequestHandler(callerApp, CallBody) {
       return { type: "success", status: "" };
     }
 
-    case "db_unsubscribe": {
+    case "unsubscribe": {
       const { subscriberId } = CallBody;
       if (!subscriberId)
         return { type: "error", status: "Missing 'subscriberId'." };
@@ -205,13 +205,13 @@ async function DbRequestHandler(callerApp, CallBody) {
       return { type: "success", status: "" };
     }
 
-    case "db_flush":
+    case "flush":
       return {
         type: "success",
         status: "Firebase writes are real-time — nothing to flush.",
       };
 
-    case "db_stats": {
+    case "stats": {
       const snap = await get(ref(db, "/"));
       const root = snap.exists() ? snap.val() : {};
       const topLevelKeys =
@@ -393,13 +393,13 @@ async function openDbViewerWindow() {
 
   async function render() {
     const dataRes = await Registry.responsibility_call("Database", "Firebase", {
-      type: "db_get_all",
+      type: "get_all",
       path: currentPath,
     });
     const statsRes = await Registry.responsibility_call(
       "Database",
       "Firebase",
-      { type: "db_stats" },
+      { type: "stats" },
     );
     const data = dataRes.type === "success" ? dataRes.data : null;
     const stats = statsRes.type === "success" ? statsRes.data : {};
@@ -452,7 +452,7 @@ async function openDbViewerWindow() {
 
   // Live subscription on root so viewer refreshes on any write
   await Registry.responsibility_call("Database", "Firebase", {
-    type: "db_subscribe",
+    type: "subscribe",
     subscriberId: viewerId,
     path: "/",
     callback: () => render(),
@@ -461,7 +461,7 @@ async function openDbViewerWindow() {
   const observer = new MutationObserver(() => {
     if (!document.contains(ShadowRoot.host)) {
       Registry.responsibility_call("Database", "Firebase", {
-        type: "db_unsubscribe",
+        type: "unsubscribe",
         subscriberId: viewerId,
       });
       observer.disconnect();

@@ -71,7 +71,7 @@ All methods return `{ type: 'success' }` or `{ type: 'error', status }`.
 ```js
 const cancel = Registry.responsibility_on_available('Database', () => {
   cancel();
-  Registry.responsibility_call('Database', 'MyApp', { type: 'db_get', path: 'config' });
+  Registry.responsibility_call('Database', 'MyApp', { type: 'get', path: 'config' });
 });
 ```
 

@@ -18,13 +18,13 @@ const DB_PATH = "app_catalog";
 
 async function dbSet(key, value) {
     return Registry.responsibility_call("Database", "AppStarter", {
-        type: "db_set", path: `${DB_PATH}/${key}`, value,
+        type: "set", path: `${DB_PATH}/${key}`, value,
     });
 }
 
 async function dbGetAll() {
     return Registry.responsibility_call("Database", "AppStarter", {
-        type: "db_get_all", path: DB_PATH,
+        type: "get_all", path: DB_PATH,
     });
 }
 

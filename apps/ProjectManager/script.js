@@ -128,7 +128,7 @@ async function shareProjectWithEmail(project, recipientEmail) {
   // 1. Resolve email → UID via the index written by Firebase.js on login
   const encoded = encodeEmail(recipientEmail);
   const idxRes = await Registry.responsibility_call("Database", APP_ID, {
-    type: "db_get",
+    type: "get",
     path: `user_index/${encoded}`,
   });
   if (idxRes.type !== "success" || !idxRes.data) {
@@ -152,7 +152,7 @@ async function shareProjectWithEmail(project, recipientEmail) {
   // 3. Grant access to the project — point the recipient's index at the same hash.
   //    No slides dataRefs needed: SlideShowHandler fetches slides directly by key.
   const refRes = await Registry.responsibility_call("Database", APP_ID, {
-    type: "db_set",
+    type: "set",
     path: `users/${recipientUid}/dataRefs/projects/${project.hash}`,
     value: true,
   });

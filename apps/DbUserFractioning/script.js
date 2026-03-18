@@ -47,7 +47,7 @@ function getUID() {
 
 async function dbGet(path) {
   const res = await Registry.responsibility_call("Database", "DbUserFractioning", {
-    type: "db_get",
+    type: "get",
     path,
   });
   console.log(res)
@@ -57,7 +57,7 @@ async function dbGet(path) {
 
 async function dbGetAll(path) {
   const res = await Registry.responsibility_call("Database", "DbUserFractioning", {
-    type: "db_get_all",
+    type: "get_all",
     path,
   });
   console.log(res)
@@ -67,7 +67,7 @@ async function dbGetAll(path) {
 
 async function dbSet(path, value) {
   const res = await Registry.responsibility_call("Database", "DbUserFractioning", {
-    type: "db_set",
+    type: "set",
     path,
     value,
   });

@@ -7,7 +7,7 @@ Registry loads `autostart.json` and boots each listed app. Apps register respons
 ```json
 [
   { "name": "Storage", "src": "./apps/Firebase/script.js" },
-  { "name": "UI",      "src": "./apps/ui.js"      }
+  { "name": "UI",      "src": "example.com/script.js"      }
 ]
 ```
 ```js

@@ -3,7 +3,7 @@
 In-process app and capability management for JavaScript. Add one script tag — autostart handles the rest.
 
 ```html
-<script type="module" src="registry.js"></script>
+<script type="module" src="WebAppPlatform-main.js"></script>
 ```
 
 Registry loads `autostart.json` and boots each listed app. Apps register responsibilities, call each other, and manage their own lifecycle from there.

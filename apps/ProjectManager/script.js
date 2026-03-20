@@ -59,9 +59,9 @@ function ensureHashes(projects) {
 }
 
 function sortProjects(projects) {
-  projects.sort((a, b) =>
-    a.name.localeCompare(b.name, undefined, { numeric: true }),
-  );
+  //projects.sort((a, b) =>
+  //  a.name.localeCompare(b.name, undefined, { numeric: true }),
+  //);
 }
 
 // ─── Wait helper ─────────────────────────────────────────────────────────────

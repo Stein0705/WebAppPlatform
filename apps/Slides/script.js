@@ -323,12 +323,6 @@ async function fracSet(ref, body, meta = {}) {
   if (res.type !== "success") throw new Error(res.status);
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-//  fracGetByKeys — fetch specific slide hashes directly from "slides" partition
-//  without going through the dataRefs gate. The keys are trusted because they
-//  come from the project tree the user already has read access to.
-// ─────────────────────────────────────────────────────────────────────────────
-
 async function fracGetSlidesByKeys(keys) {
   if (!keys || keys.length === 0) return {};
   const res = await Registry.responsibility_call("dbuserfractioning", APP_ID, {
@@ -581,7 +575,7 @@ const STYLES = `
     background: rgba(52,211,153,0.08);
     border-color: rgba(52,211,153,0.28);
     color: var(--accent2);
-    font-size: 11px; width: auto; padding: 0 10px; gap: 5px;
+    font-size: 11px; width: auto; padding: 0 10px;
     font-weight: 500; letter-spacing: 0.01em;
   }
   .icon-btn.present-btn:hover {
@@ -765,37 +759,6 @@ const STYLES = `
     outline: none !important;
     cursor: default !important;
   }
-  .present-nav-hint {
-    position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
-    font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.25);
-    letter-spacing: 0.09em; white-space: nowrap;
-    pointer-events: none;
-    transition: opacity 1s ease;
-  }
-  .present-counter {
-    position: absolute; top: 14px; right: 20px;
-    font-family: var(--mono); font-size: 11px; color: rgba(255,255,255,0.22);
-    letter-spacing: 0.06em;
-    pointer-events: none;
-  }
-  .present-arrow {
-    position: absolute; top: 50%; transform: translateY(-50%);
-    width: 48px; height: 48px;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    cursor: pointer; color: rgba(255,255,255,0.45); font-size: 20px;
-    transition: background 0.15s, color 0.15s, opacity 0.2s;
-    opacity: 0;
-    pointer-events: auto;
-    font-family: inherit;
-  }
-  .present-arrow:hover { background: rgba(255,255,255,0.14); color: #fff; }
-  .present-arrow.left  { left: 20px; }
-  .present-arrow.right { right: 20px; }
-  .present-overlay:hover .present-arrow:not([hidden]) { opacity: 1; }
-  .present-arrow[hidden] { display: none !important; }
 `;
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -819,11 +782,7 @@ class SlideShowHandler {
     this._presentIndex = 0;
     this._presentOverlay = null;
     this._presentStage = null;
-    this._presentCounter = null;
-    this._presentBtnLeft = null;
-    this._presentBtnRight = null;
     this._presentKeyHandler = null;
-    this._presentDocKeyHandler = null;
     this._presentResizeHandler = null;
   }
 
@@ -835,7 +794,7 @@ class SlideShowHandler {
         <span class="header-title">🎞 SlideShow</span>
         <span class="project-badge" id="project-badge">No project loaded</span>
         <button class="icon-btn" id="btn-reload" title="Reload from database">↺</button>
-        <button class="icon-btn present-btn" id="btn-present" title="Present slideshow (F5)">▶ Present</button>
+        <button class="icon-btn present-btn" id="btn-present" title="Present slideshow">▶ Present</button>
       </div>
       <div class="presentation">
         <div class="left-panel">
@@ -1141,7 +1100,6 @@ class SlideShowHandler {
   // ── Presentation mode ──────────────────────────────────────────────────────
 
   _enterPresentation(startIndex = 0) {
-    // Remove any existing overlay
     this.shadow.querySelector("#_present-overlay")?.remove();
 
     this._presentIndex = Math.max(0, Math.min(this.slides.length - 1, startIndex));
@@ -1151,85 +1109,41 @@ class SlideShowHandler {
     overlay.id = "_present-overlay";
     overlay.tabIndex = 0;
 
-    // Slide counter (top-right)
-    const counter = document.createElement("div");
-    counter.className = "present-counter";
-    overlay.appendChild(counter);
-
-    // The scaled slide stage
     const stage = document.createElement("div");
     stage.className = "present-stage";
     overlay.appendChild(stage);
 
-    // Keyboard hint (fades out)
-    const hint = document.createElement("div");
-    hint.className = "present-nav-hint";
-    hint.textContent = "← → to navigate  ·  Esc to exit";
-    overlay.appendChild(hint);
-
-    // Prev / next arrow buttons
-    const btnLeft = document.createElement("button");
-    btnLeft.className = "present-arrow left";
-    btnLeft.innerHTML = "&#8249;";
-    btnLeft.onclick = () => this._showPresentSlide(this._presentIndex - 1);
-    overlay.appendChild(btnLeft);
-
-    const btnRight = document.createElement("button");
-    btnRight.className = "present-arrow right";
-    btnRight.innerHTML = "&#8250;";
-    btnRight.onclick = () => this._showPresentSlide(this._presentIndex + 1);
-    overlay.appendChild(btnRight);
-
     this.shadow.appendChild(overlay);
 
-    // Store refs
     this._presentOverlay = overlay;
     this._presentStage = stage;
-    this._presentCounter = counter;
-    this._presentBtnLeft = btnLeft;
-    this._presentBtnRight = btnRight;
 
-    // Keyboard handler (arrow keys + escape)
     this._presentKeyHandler = (e) => {
       if (e.key === "ArrowRight" || e.key === "ArrowDown") {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         this._showPresentSlide(this._presentIndex + 1);
       } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         this._showPresentSlide(this._presentIndex - 1);
       } else if (e.key === "Escape") {
-        e.preventDefault();
-        e.stopPropagation();
+        e.preventDefault(); e.stopPropagation();
         this._exitPresentation();
       }
     };
 
-    // Listen on both shadow and document to ensure we catch the events
     this.shadow.addEventListener("keydown", this._presentKeyHandler, true);
     document.addEventListener("keydown", this._presentKeyHandler, true);
-    this._presentDocKeyHandler = this._presentKeyHandler;
 
-    // Resize handler to keep slide scaled correctly
     this._presentResizeHandler = () => {
       const s = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
       stage.style.transform = `scale(${s})`;
     };
     window.addEventListener("resize", this._presentResizeHandler);
 
-    // Initial scale
-    const scale = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
-    stage.style.transform = `scale(${scale})`;
+    stage.style.transform = `scale(${Math.min(window.innerWidth / 1600, window.innerHeight / 900)})`;
 
-    // Render first slide
     this._showPresentSlide(this._presentIndex);
-
-    // Focus overlay so keyboard events fire immediately
     overlay.focus();
-
-    // Fade out the hint after 3s
-    setTimeout(() => { hint.style.opacity = "0"; }, 3000);
   }
 
   _exitPresentation() {
@@ -1237,16 +1151,12 @@ class SlideShowHandler {
     this._presentOverlay.remove();
     this._presentOverlay = null;
     this._presentStage = null;
-    this._presentCounter = null;
-    this._presentBtnLeft = null;
-    this._presentBtnRight = null;
 
     this.shadow.removeEventListener("keydown", this._presentKeyHandler, true);
-    document.removeEventListener("keydown", this._presentDocKeyHandler, true);
+    document.removeEventListener("keydown", this._presentKeyHandler, true);
     window.removeEventListener("resize", this._presentResizeHandler);
 
     this._presentKeyHandler = null;
-    this._presentDocKeyHandler = null;
     this._presentResizeHandler = null;
   }
 
@@ -1256,11 +1166,7 @@ class SlideShowHandler {
     index = Math.max(0, Math.min(total - 1, index));
     this._presentIndex = index;
 
-    // Build slide element
-    const slide = this.slides[index];
-    const slideEl = this._createSlideEl(slide);
-
-    // Disable all contenteditable so nothing is accidentally edited
+    const slideEl = this._createSlideEl(this.slides[index]);
     slideEl.querySelectorAll("[contenteditable]").forEach((el) => {
       el.contentEditable = "false";
     });
@@ -1268,21 +1174,13 @@ class SlideShowHandler {
     this._presentStage.innerHTML = "";
     this._presentStage.appendChild(slideEl);
 
-    // Update counter
-    this._presentCounter.textContent = `${index + 1} / ${total}`;
-
-    // Show/hide nav arrows
-    this._presentBtnLeft.hidden = index === 0;
-    this._presentBtnRight.hidden = index === total - 1;
-
-    // Sync active index back to the editor thumbnail strip
+    // Sync thumbnail strip
     this.activeIndex = index;
     this.thumbnailsEl.querySelectorAll(".thumbnail").forEach((t, i) => {
       t.classList.toggle("active", i === index);
     });
-    // Scroll the active thumbnail into view
-    const activeThumb = this.thumbnailsEl.querySelectorAll(".thumbnail")[index];
-    activeThumb?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    this.thumbnailsEl.querySelectorAll(".thumbnail")[index]
+      ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }
 
   // ── Scaling ────────────────────────────────────────────────────────────────
